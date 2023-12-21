@@ -38,12 +38,6 @@ jobs:
           cd ffmpeg-6.1
           make -j$(nproc)
 
-      - name: Package FFmpeg build
-        run: |
-          cd ffmpeg-6.1
-          mkdir ffmpeg_build
-          cp ffmpeg ffprobe ffplay ffmpeg_build/
-
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:

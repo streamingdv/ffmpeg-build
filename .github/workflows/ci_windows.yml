@@ -72,13 +72,6 @@ jobs:
           make -j$(nproc)
         shell: msys2 {0}
 
-      - name: Package FFmpeg build
-        run: |
-          cd ffmpeg-6.1
-          mkdir ffmpeg_build
-          cp ffmpeg ffprobe ffplay ffmpeg_build/
-        shell: msys2 {0}
-
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
