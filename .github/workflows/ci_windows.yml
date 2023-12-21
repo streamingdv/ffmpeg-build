@@ -76,13 +76,13 @@ jobs:
         run: pacman -Syu --noconfirm zip
         shell: msys2 {0}
 
-      - name: Create Zip Archive
-        run: |
-          Compress-Archive -Path ffmpeg-6.1/* -DestinationPath ffmpeg_build.zip
-        shell: bash
+      - uses: vimtor/action-zip@v1.1
+        with:
+            files: ffmpeg-6.1
+            dest: ffmpeg_build.zip
 
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-build-artifact-windows-${{ matrix.arch }}
-          path: ffmpeg-6.1/ffmpeg_build.zip
+          path: ffmpeg_build.zip
