@@ -72,8 +72,14 @@ jobs:
           make -j$(nproc)
         shell: msys2 {0}
 
+      - name: Create Zip Archive
+        run: |
+          cd ffmpeg-6.1
+          zip -r ffmpeg_build.zip .
+        shell: bash
+
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-build-artifact-windows-${{ matrix.arch }}
-          path: ffmpeg-6.1
+          path: ffmpeg-6.1/ffmpeg_build.zip
