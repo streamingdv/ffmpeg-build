@@ -63,7 +63,7 @@ jobs:
       - name: Configure FFmpeg
         run: |
           cd ffmpeg-6.1
-          ./configure --disable-all --disable-gpl --enable-libdrm --enable-avcodec --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_d3d11va --enable-hwaccel=hevc_d3d11va --enable-hwaccel=h264_dxva2 --enable-hwaccel=hevc_dxva2 --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuda --enable-hwaccel=hevc_cuda
+          ./configure --disable-all --disable-gpl --enable-avcodec --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_d3d11va --enable-hwaccel=hevc_d3d11va --enable-hwaccel=h264_dxva2 --enable-hwaccel=hevc_dxva2 --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuda --enable-hwaccel=hevc_cuda
         shell: msys2 {0}
 
       - name: Build FFmpeg
