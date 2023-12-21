@@ -15,14 +15,14 @@ jobs:
             arch: 64bit
             archValue: 64
             archAltValue: x64
-          - sys: MINGW32 # disable for testing now
+          - sys: MINGW32
             env: i686
             arch: 32bit
             archValue: 32
             archAltValue: x32
 
     steps:
-      - name: Checkout fffmpeg-build repository
+      - name: Checkout ffmpeg-build repository
         uses: actions/checkout@v2
 
       - name: Setup MSYS2
@@ -51,11 +51,36 @@ jobs:
             mingw-w64-${{ matrix.env }}-glslang
             mingw-w64-${{ matrix.env }}-cmake
             mingw-w64-${{ matrix.env }}-python
-            
-            
+            mingw-w64-${{ matrix.env }}-nasm
+            mingw-w64-${{ matrix.env }}-yasm
 
-      - name: Upload Artifact
+      - name: Download FFmpeg
+        run: |
+          wget https://ffmpeg.org/releases/ffmpeg-6.1.tar.xz
+          tar xvf ffmpeg-6.1.tar.xz
+        shell: msys2 {0}
+
+      - name: Configure FFmpeg
+        run: |
+          cd ffmpeg-6.1
+          ./configure --disable-all --disable-gpl --enable-libdrm --enable-avcodec --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_vaapi --enable-hwaccel=hevc_vaapi --enable-hwaccel=h264_vdpau --enable-hwaccel=hevc_vdpau --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuvid --enable-hwaccel=hevc_cuvid
+        shell: msys2 {0}
+
+      - name: Build FFmpeg
+        run: |
+          cd ffmpeg-6.1
+          make -j$(nproc)
+        shell: msys2 {0}
+
+      - name: Package FFmpeg build
+        run: |
+          cd ffmpeg-6.1
+          mkdir ffmpeg_build
+          cp ffmpeg ffprobe ffplay ffmpeg_build/
+        shell: msys2 {0}
+
+      - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
-          name: windows-libjerasure-jni-artifact-${{ matrix.arch }}
-          path: ${{github.workspace}}/build/nativeBinaries/libplacebo-jni-native-${{ matrix.archValue }}.dll
+          name: ffmpeg-build-artifact-windows-${{ matrix.arch }}
+          path: ffmpeg-6.1

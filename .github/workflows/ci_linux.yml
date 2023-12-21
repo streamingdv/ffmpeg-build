@@ -8,29 +8,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout fffmpeg-build repository
+      - name: Checkout ffmpeg-build repository
         uses: actions/checkout@v2
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libavcodec-dev libavformat-dev libegl1-mesa-dev libsdl2-dev libxxhash-dev glslang-dev libvulkan-dev liblcms2-dev build-essential libx11-xcb-dev libxkbcommon-dev libwayland-dev libxrandr-dev cmake
-
-      - name: Install xbxc dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libxcb1-dev libxcb-randr0-dev libxcb-keysyms1-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-xkb-dev
+          sudo apt-get install -y libdrm-dev libegl1-mesa-dev libsdl2-dev libxxhash-dev glslang-dev libvulkan-dev liblcms2-dev build-essential libx11-xcb-dev libxkbcommon-dev libwayland-dev libxrandr-dev cmake pkg-config nasm yasm
 
       - name: Install Meson and Ninja
         run: |
           sudo apt-get install -y python3-pip
           pip3 install --upgrade meson==1.3.0
           pip3 install --upgrade ninja==1.11.1
-          
-          
 
-      - name: Upload Artifact
+      - name: Download FFmpeg
+        run: |
+          wget https://ffmpeg.org/releases/ffmpeg-6.1.tar.xz
+          tar xvf ffmpeg-6.1.tar.xz
+          cd ffmpeg-6.1
+
+      - name: Configure FFmpeg
+        run: |
+          cd ffmpeg-6.1
+          ./configure --disable-all --disable-gpl --enable-libdrm --enable-avcodec --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_vaapi --enable-hwaccel=hevc_vaapi --enable-hwaccel=h264_vdpau --enable-hwaccel=hevc_vdpau --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuvid --enable-hwaccel=hevc_cuvid
+
+      - name: Build FFmpeg
+        run: |
+          cd ffmpeg-6.1
+          make -j$(nproc)
+
+      - name: Package FFmpeg build
+        run: |
+          cd ffmpeg-6.1
+          mkdir ffmpeg_build
+          cp ffmpeg ffprobe ffplay ffmpeg_build/
+
+      - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
-          name: linux-libplacebo-jni-artifact-64bit
-          path: ${{github.workspace}}/build/nativeBinaries/libplacebo-jni-native-64.so
+          name: ffmpeg-build-artifact
+          path: ffmpeg-6.1
