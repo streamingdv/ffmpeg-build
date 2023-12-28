@@ -31,6 +31,7 @@ jobs:
       - name: Configure FFmpeg
         run: |
           cd ffmpeg-6.1
+          export CFLAGS="-fPIC"
           ./configure --disable-all --disable-gpl --enable-static --enable-libdrm --enable-avcodec --enable-avformat --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_vaapi --enable-hwaccel=hevc_vaapi --enable-hwaccel=h264_vdpau --enable-hwaccel=hevc_vdpau --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuda --enable-hwaccel=hevc_cuda
 
       - name: Build FFmpeg
