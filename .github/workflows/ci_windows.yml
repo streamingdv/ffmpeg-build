@@ -42,7 +42,6 @@ jobs:
             mingw-w64-${{ matrix.env }}-ninja
             mingw-w64-${{ matrix.env }}-spirv-tools
             mingw-w64-${{ matrix.env }}-spirv-cross
-            mingw-w64-${{ matrix.env }}-vulkan
             mingw-w64-${{ matrix.env }}-vulkan-headers
             mingw-w64-${{ matrix.env }}-vulkan-loader
             mingw-w64-${{ matrix.env }}-libdovi
