@@ -53,11 +53,12 @@ jobs:
             mingw-w64-${{ matrix.env }}-nasm
             mingw-w64-${{ matrix.env }}-yasm
 
-      - name: Download FFmpeg
-        run: |
-          wget https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.xz
-          tar xvf ffmpeg-6.1.1.tar.xz
-        shell: msys2 {0}
+      - name: Checkout FFmpeg at Tag n6.1.1
+        uses: actions/checkout@v3
+        with:
+          repository: 'FFmpeg/FFmpeg'
+          ref: 'n6.1.1'
+          path: 'ffmpeg-6.1.1'
 
       - name: Apply FFmpeg pacthes
         run: |
