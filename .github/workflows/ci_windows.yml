@@ -68,6 +68,7 @@ jobs:
       - name: Check Patch Application
         run: |
           git diff
+        shell: msys2 {0}
 
       - name: Configure FFmpeg
         run: |
