@@ -33,7 +33,11 @@ jobs:
         run: |
           wget https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.xz
           tar xvf ffmpeg-6.1.1.tar.xz
+
+      - name: Apply FFmpeg pacthes
+        run: |
           cd ffmpeg-6.1.1
+          git apply ../patches/vaapi_h264.patch
 
       - name: Configure FFmpeg
         run: |
