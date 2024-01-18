@@ -31,23 +31,23 @@ jobs:
 
       - name: Download FFmpeg
         run: |
-          wget https://ffmpeg.org/releases/ffmpeg-6.1.tar.xz
-          tar xvf ffmpeg-6.1.tar.xz
-          cd ffmpeg-6.1
+          wget https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.xz
+          tar xvf ffmpeg-6.1.1.tar.xz
+          cd ffmpeg-6.1.1
 
       - name: Configure FFmpeg
         run: |
-          cd ffmpeg-6.1
+          cd ffmpeg-6.1.1
           export CFLAGS="-fPIC"
           sudo ./configure --disable-all --disable-gpl --disable-iconv --enable-libdrm --enable-vulkan --enable-static --enable-pic --enable-libdrm --enable-avcodec --enable-avformat --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_vaapi --enable-hwaccel=hevc_vaapi --enable-hwaccel=h264_vdpau --enable-hwaccel=hevc_vdpau --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuda --enable-hwaccel=hevc_cuda --extra-ldexeflags="-pie"
 
       - name: Build FFmpeg
         run: |
-          cd ffmpeg-6.1
+          cd ffmpeg-6.1.1
           make -j$(nproc)
 
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
         with:
           name: ffmpeg-build-artifact
-          path: ffmpeg-6.1
+          path: ffmpeg-6.1.1
