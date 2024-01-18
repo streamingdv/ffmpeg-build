@@ -39,6 +39,10 @@ jobs:
           cd ffmpeg-6.1.1
           git apply ../patches/vaapi_h264.patch
 
+      - name: Check Patch Application
+        run: |
+          git diff
+
       - name: Configure FFmpeg
         run: |
           cd ffmpeg-6.1.1

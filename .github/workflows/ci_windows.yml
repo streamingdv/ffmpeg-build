@@ -59,17 +59,21 @@ jobs:
           tar xvf ffmpeg-6.1.1.tar.xz
         shell: msys2 {0}
 
+      - name: Apply FFmpeg pacthes
+        run: |
+          cd ffmpeg-6.1.1
+          git apply ../patches/vaapi_h264.patch
+        shell: msys2 {0}
+
+      - name: Check Patch Application
+        run: |
+          git diff
+
       - name: Configure FFmpeg
         run: |
           cd ffmpeg-6.1.1
           export CFLAGS="-fPIC"
           ./configure --disable-all --disable-gpl --disable-iconv --enable-vulkan --enable-static --enable-pic --enable-avcodec --enable-avformat --enable-decoder=h264 --enable-decoder=hevc --enable-hwaccel=h264_d3d11va --enable-hwaccel=hevc_d3d11va --enable-hwaccel=h264_dxva2 --enable-hwaccel=hevc_dxva2 --enable-hwaccel=h264_vulkan --enable-hwaccel=hevc_vulkan --enable-hwaccel=h264_cuda --enable-hwaccel=hevc_cuda
-        shell: msys2 {0}
-
-      - name: Apply FFmpeg pacthes
-        run: |
-          cd ffmpeg-6.1.1
-          git apply ../patches/vaapi_h264.patch
         shell: msys2 {0}
 
       - name: Build FFmpeg
