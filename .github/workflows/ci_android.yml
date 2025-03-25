@@ -8,11 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch:
-          - arm
-          - arm64
-          - x86
-          - x86_64
+        arch: [arm, arm64, x86, x86_64]
 
     steps:
       - name: Checkout FFmpeg-build repository
@@ -21,7 +17,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake nasm yasm pkg-config
+          sudo apt-get install -y build-essential cmake nasm yasm pkg-config wget unzip
+
+      - name: Download Android SDK
+        run: |
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk
+          yes | $HOME/android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk "platforms;android-30" "build-tools;30.0.3" "ndk;27.2.12479018"
+          rm -f commandlinetools-linux-9477386_latest.zip
+
+      - name: Set up environment variables
+        run: |
+          echo "export ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_SDK_ROOT/cmdline-tools/bin:$PATH" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_SDK_ROOT/platforms/android-30:$PATH" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_SDK_ROOT/build-tools/30.0.3:$PATH" >> $GITHUB_ENV
 
       - name: Download Android NDK
         run: |
@@ -71,49 +81,67 @@ jobs:
               ;;
           esac
 
-          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-          export CC=$TARGET$API-clang
-          export CXX=$TARGET$API-clang++
-          export AR=$TARGET-ar
-          export AS=$TARGET-as
-          export LD=$TARGET-ld
-          export STRIP=$TARGET-strip
-          export RANLIB=$TARGET-ranlib
-          export NM=$TARGET-nm
-          export OBJCOPY=$TARGET-objcopy
-          export OBJDUMP=$TARGET-objdump
-          export READELF=$TARGET-readelf
+          TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
+
+          export PATH=$TOOLCHAIN:$PATH
+          export CC=$TOOLCHAIN/${TARGET}${API}-clang
+          export CXX=$TOOLCHAIN/${TARGET}${API}-clang++
+          export LD=$TOOLCHAIN/${TARGET}${API}-clang
+          export AR=$TOOLCHAIN/llvm-ar
+          export STRIP=$TOOLCHAIN/llvm-strip
+          export RANLIB=$TOOLCHAIN/llvm-ranlib
+          export NM=$TOOLCHAIN/llvm-nm
+          export OBJCOPY=$TOOLCHAIN/llvm-objcopy
+          export OBJDUMP=$TOOLCHAIN/llvm-objdump
+          export READELF=$TOOLCHAIN/llvm-readelf
+
+          EXTRA_FLAGS=""
+          if [ "$ARCH" = "x86" ] || [ "$ARCH" = "x86_64" ]; then
+            EXTRA_FLAGS="--disable-asm"
+          fi
+          
+          export CFLAGS="-fPIC"
+          export CXXFLAGS="-fPIC"
 
           ./configure \
-            --prefix=$GITHUB_WORKSPACE/ffmpeg-android-build/${{ matrix.arch }} \
-            --target-os=android \
-            --arch=$ARCH \
-            --cc=$CC \
-            --cxx=$CXX \
-            --ar=$AR \
-            --as=$AS \
-            --ld=$LD \
-            --nm=$NM \
-            --ranlib=$RANLIB \
-            --strip=$STRIP \
-            --enable-cross-compile \
-            --sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
-            --disable-all \
-            --enable-static \
-            --enable-pic \
-            --enable-avcodec \
-            --enable-avformat \
-            --enable-opengl \
-            --enable-mediacodec \
-            --enable-decoder=h264 \
-            --enable-decoder=hevc \
-            --extra-ldexeflags="-pie"
+          --prefix=$GITHUB_WORKSPACE/ffmpeg-android-build/${{ matrix.arch }} \
+          --target-os=android \
+          --sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
+          --arch=$ARCH \
+          --cc="$CC" \
+          --cxx="$CXX" \
+          --ranlib="$RANLIB" \
+          --strip="$STRIP" \
+          --disable-all \
+          --disable-vulkan \
+          --enable-shared \
+          --enable-jni \
+          --enable-cross-compile \
+          --enable-static \
+          --enable-pic \
+          --enable-avcodec \
+          --enable-avformat \
+          --enable-avutil \
+          --enable-mediacodec \
+          --enable-decoder=h264 \
+          --enable-decoder=hevc \
+          --extra-cflags="-fPIC" \
+          --extra-cxxflags="-fPIC" \
+          --extra-ldexeflags="-pie" \
+          $EXTRA_FLAGS
 
       - name: Build FFmpeg
         run: |
           cd ffmpeg-6.1.1
           make -j$(nproc)
           make install
+          
+          echo "Checking for -fPIC in static FFmpeg libraries:"
+          for LIB in libavcodec.a libavformat.a libavutil.a; do
+            echo "Checking $LIB:"
+            readelf -r ../ffmpeg-android-build/${{ matrix.arch }}/lib/$LIB | grep R_X86_64_PC32 && echo "❌ Not PIC" || echo "✅ PIC OK"
+          done
+
 
       - name: Upload FFmpeg build
         uses: actions/upload-artifact@v4
