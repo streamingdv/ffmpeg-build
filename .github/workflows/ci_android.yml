@@ -1,0 +1,122 @@
+name: CI Android FFmpeg
+on:
+  workflow_dispatch:
+
+jobs:
+  build-binaries-android:
+    name: Build Android FFmpeg
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - arm
+          - arm64
+          - x86
+          - x86_64
+
+    steps:
+      - name: Checkout FFmpeg-build repository
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake nasm yasm pkg-config
+
+      - name: Download Android NDK
+        run: |
+          wget https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+          unzip android-ndk-r27c-linux.zip
+          mv android-ndk-r27c $HOME/android-ndk
+          rm -f android-ndk-r27c-linux.zip
+
+      - name: Set up environment variables for NDK
+        run: |
+          echo "export ANDROID_NDK_HOME=$HOME/android-ndk" >> $GITHUB_ENV
+          echo "export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Checkout FFmpeg at Tag n6.1.1
+        uses: actions/checkout@v3
+        with:
+          repository: 'FFmpeg/FFmpeg'
+          ref: 'n6.1.1'
+          path: 'ffmpeg-6.1.1'
+
+      - name: Apply FFmpeg patches
+        run: |
+          cd ffmpeg-6.1.1
+          git apply ../patches/vaapi_h264.patch
+
+      - name: Configure FFmpeg for Android
+        run: |
+          cd ffmpeg-6.1.1
+          ARCH=${{ matrix.arch }}
+
+          case $ARCH in
+            arm)
+              TARGET=armv7a-linux-androideabi
+              API=21
+              ;;
+            arm64)
+              TARGET=aarch64-linux-android
+              API=21
+              ;;
+            x86)
+              TARGET=i686-linux-android
+              API=21
+              ;;
+            x86_64)
+              TARGET=x86_64-linux-android
+              API=21
+              ;;
+          esac
+
+          export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+          export CC=$TARGET$API-clang
+          export CXX=$TARGET$API-clang++
+          export AR=$TARGET-ar
+          export AS=$TARGET-as
+          export LD=$TARGET-ld
+          export STRIP=$TARGET-strip
+          export RANLIB=$TARGET-ranlib
+          export NM=$TARGET-nm
+          export OBJCOPY=$TARGET-objcopy
+          export OBJDUMP=$TARGET-objdump
+          export READELF=$TARGET-readelf
+
+          ./configure \
+            --prefix=$GITHUB_WORKSPACE/ffmpeg-android-build/${{ matrix.arch }} \
+            --target-os=android \
+            --arch=$ARCH \
+            --cc=$CC \
+            --cxx=$CXX \
+            --ar=$AR \
+            --as=$AS \
+            --ld=$LD \
+            --nm=$NM \
+            --ranlib=$RANLIB \
+            --strip=$STRIP \
+            --enable-cross-compile \
+            --sysroot=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot \
+            --disable-all \
+            --enable-static \
+            --enable-pic \
+            --enable-avcodec \
+            --enable-avformat \
+            --enable-opengl \
+            --enable-mediacodec \
+            --enable-decoder=h264 \
+            --enable-decoder=hevc \
+            --extra-ldexeflags="-pie"
+
+      - name: Build FFmpeg
+        run: |
+          cd ffmpeg-6.1.1
+          make -j$(nproc)
+          make install
+
+      - name: Upload FFmpeg build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-android-${{ matrix.arch }}
+          path: ffmpeg-android-build/${{ matrix.arch }}
